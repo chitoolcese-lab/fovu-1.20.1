@@ -1,27 +1,55 @@
-name: Build
+package dev.tori.fovu.mixin.client;
 
-on:
-  push:
-  workflow_dispatch:
+import com.mojang.serialization.Codec;
+import dev.tori.fovu.client.FovUClient;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.option.GameOptions;
+import net.minecraft.client.option.SimpleOption;
+import net.minecraft.text.Text;
+import org.spongepowered.asm.mixin.Final;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Mutable;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+import java.io.File;
 
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
+import static net.minecraft.client.option.GameOptions.getGenericValueText;
 
-      - uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: 8.6
+@Mixin(GameOptions.class)
+public class MixinGameOptions {
 
-      - run: gradle build
+    @Mutable
+    @Shadow
+    @Final
+    private SimpleOption<Integer> fov;
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: fovu-1.20.1
-          path: build/libs/*.jar
+    @Inject(
+            method = "<init>(Lnet/minecraft/client/MinecraftClient;Ljava/io/File;)V",
+            at = @At(
+                    value = "FIELD", target = "Lnet/minecraft/client/option/GameOptions;fov:Lnet/minecraft/client/option/SimpleOption;",
+                    shift = At.Shift.AFTER
+            )
+    )
+    private void onGameOptionsInit(MinecraftClient client, File file, CallbackInfo ci) {
+        this.fov = new SimpleOption<>(
+                "options.fov",
+                SimpleOption.emptyTooltip(),
+                (optionText, value) -> {
+                    Text text;
+                    switch (value) {
+                        case 70 -> text = getGenericValueText(optionText, Text.translatable("options.fov.min"));
+                        case 110 -> text = getGenericValueText(optionText, Text.translatable("options.fov.max"));
+                        default -> text = getGenericValueText(optionText, Text.of(value.toString()));
+                    }
+                    return text;
+                },
+                new SimpleOption.ValidatingIntSliderCallbacks(FovUClient.MIN_FOV, FovUClient.MAX_FOV),
+                Codec.DOUBLE.xmap((value) -> (int) (value * (double) 40.0F + (double) 70.0F), (value) -> ((double) value - (double) 70.0F) / (double) 40.0F),
+                70,
+                (value) -> MinecraftClient.getInstance().worldRenderer.scheduleTerrainUpdate()
+        );
+    }
+}
