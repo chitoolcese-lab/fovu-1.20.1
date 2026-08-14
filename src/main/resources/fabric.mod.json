@@ -1,1 +1,20 @@
-
+{
+  "schemaVersion": 1,
+  "id": "fovu",
+  "version": "${version}",
+  "name": "FOVU",
+  "description": "Increases the bounds of the vanilla FOV slider!",
+  "authors": ["7orivorian"],
+  "contributors": ["CryroByte"],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["dev.tori.fovu.client.FovUClient"]
+  },
+  "mixins": ["fovu.mixins.json"],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "~${min_minecraft_version}"
+  }
+}
