@@ -38,13 +38,11 @@ public class MixinGameOptions {
                 "options.fov",
                 SimpleOption.emptyTooltip(),
                 (optionText, value) -> {
-                    Text text = Text.of("Value is not an Integer.");
-                    if (value instanceof Integer val) {
-                        switch (val) {
-                            case 70 -> text = getGenericValueText(optionText, Text.translatable("options.fov.min"));
-                            case 110 -> text = getGenericValueText(optionText, Text.translatable("options.fov.max"));
-                            default -> text = getGenericValueText(optionText, Text.of(val.toString()));
-                        }
+                    Text text;
+                    switch (value) {
+                        case 70 -> text = getGenericValueText(optionText, Text.translatable("options.fov.min"));
+                        case 110 -> text = getGenericValueText(optionText, Text.translatable("options.fov.max"));
+                        default -> text = getGenericValueText(optionText, Text.of(value.toString()));
                     }
                     return text;
                 },
